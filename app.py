@@ -3,42 +3,66 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 
+# Load Model
 model = tf.keras.models.load_model(
-    "intel_scene_classifier.h5"
+    "scene_classifier.keras"
 )
 
+# Class Names
 class_names = [
-    'buildings',
-    'forest',
-    'glacier',
-    'mountain',
-    'sea',
-    'street'
+    "buildings",
+    "forest",
+    "glacier",
+    "mountain",
+    "sea",
+    "street"
 ]
 
-st.title("Intel Scene Classification")
+st.title("🌍 Intel Natural Scene Classification")
 
-uploaded_file = st.file_uploader(
-    "Upload an image",
-    type=["jpg","png","jpeg"]
+st.write(
+    "Upload an image and the model will predict the scene category."
 )
 
-if uploaded_file:
+uploaded_file = st.file_uploader(
+    "Choose an image",
+    type=["jpg", "jpeg", "png"]
+)
 
-    image = Image.open(uploaded_file)
+if uploaded_file is not None:
 
-    st.image(image)
+    # Open image and convert to RGB
+    image = Image.open(uploaded_file).convert("RGB")
 
-    image = image.resize((150,150))
+    st.image(
+        image,
+        caption="Uploaded Image",
+        use_container_width=True
+    )
 
-    image = np.array(image)
+    # Resize image
+    #img = image.resize((224,224))
+    img = image.resize((150,150))
 
-    image = np.expand_dims(image, axis=0)
+    # Convert to numpy array
+    img = np.array(img)
 
-    pred = model.predict(image)
+    # Add batch dimension
+    img = np.expand_dims(img, axis=0)
 
-    class_idx = np.argmax(pred)
+    # MobileNetV2 preprocessing
+    img = tf.keras.applications.mobilenet_v2.preprocess_input(img)
+
+    prediction = model.predict(img)
+
+    predicted_class = class_names[np.argmax(prediction)]
+
+    confidence = np.max(prediction) * 100
 
     st.success(
-        f"Predicted Class: {class_names[class_idx]}"
+        f"Prediction: {predicted_class}"
+    )
+
+    st.write(
+        f"Confidence: {confidence:.2f}%"
     )
